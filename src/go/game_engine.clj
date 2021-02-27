@@ -7,6 +7,23 @@
   (vec (take (first size) (repeat
                            (vec (take (second size) (repeat "empty")))))))
 
+(defn num-to-stone-name
+  "Convert numbers to readable description of the stone in an intersection"
+  [intersection-num]
+  ({0 "empty", 1 "black", 2 "white"} intersection-num))
+
+(defn board-nums-to-names
+  "Convert numbers to names across the entire board"
+  [board]
+  (map (partial map num-to-stone-name) board))
+
+(defn create-test-board
+  "Return a randomized board of given size"
+  [size]
+  (vec (take (first size) (repeatedly
+                           #(vec (take (second size) (repeatedly (partial rand-int 3)))))))
+  )
+
 (defn board-dimensions
   [board]
   [(count board) (count (first board))])
@@ -72,7 +89,8 @@
 
 
 (defn capture-stones
-  [location color board])
+  [location color board]
+  board)
 
 
 (defn is-valid-move
