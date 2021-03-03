@@ -4,16 +4,23 @@
 
 ;;; Creating boards and interpreting their values
 
+(def empty-color 0)
+
 (defn get-empty-board
   "Return a new empty game board"
   [size]
   (vec (take (first size) (repeat
-                           (vec (take (second size) (repeat "empty")))))))
+                           (vec (take (second size) (repeat 0)))))))
 
 (defn num-to-stone-name
   "Convert numbers to readable description of the stone in an intersection"
   [intersection-num]
-  ({0 "empty", 1 "black", 2 "white"} intersection-num))
+  ({0 "empty", 1 "b", 2 "w"} intersection-num))
+
+(defn stone-name-to-num
+  [stone-name]
+  "Convert b, w, or empty to the right numbers"
+  ({"empty" 0, "b" 1, "w" 2} stone-name))
 
 
 (defn board-nums-to-names
@@ -27,6 +34,7 @@
   (vec (take (first size) (repeatedly
                            #(vec (take (second size) (repeatedly (partial rand-int 3)))))))
   )
+
 
 ;;; Dimensions and locations
 
@@ -53,6 +61,13 @@
   "True if the given location is empty"
   [board location]
   (= (get-intersection-value location board) 0))
+
+(defn is-enemy-intersection?
+  [board location color]
+  "True if location has a stone not matching color."
+  (not (or (is-empty-intersection? board location)
+           (= color (get-intersection-value location board)))))
+
 
 (defn lower-bound
   "Return lower bound from bounds"
@@ -83,6 +98,12 @@
         bounds [[0 (dec rows)] [0 (dec columns)]]]
     (filter (partial location-within-bounds? bounds)
             (get-possible-connected-locations location))))
+
+(defn get-enemy-neighbors
+  [board location color]
+  "Return a collection of immediate neighbors which are enemy stones."
+  (filter #(is-enemy-intersection? board % color) (get-connected-locations location board)))
+
 
 ;;;; Display
 
@@ -117,10 +138,15 @@
    (fn [location board & {:keys [group] :or {group #{}}}]
      ;Return a set consisting of groups of neighbors not already in this group
      (let [neighbors-in-group (set (get-neighbors-in-group location board))
-           updated-total-group (clojure.set/union group neighbors-in-group)
+           updated-total-group (clojure.set/union group neighbors-in-group #{location})
            remaining-neighbors (clojure.set/difference neighbors-in-group group)]
        (reduce #(get-group-from-point %2 board :group %1) updated-total-group remaining-neighbors)
        ))))
+
+(defn get-enemy-neighbor-groups
+  [board location color]
+  "Return a collection of neighbor groups."
+  (set (map #(get-group-from-point % board) (get-enemy-neighbors board location color))))
 
 
 (defn get-group-name
@@ -163,27 +189,80 @@
   [board group]
   (count (get-group-liberties board group)))
 
+(defn dead-group?
+  [board group]
+  "True if a group is dead"
+  (= 0 (count-group-liberties board group)))
 
+(defn get-point-liberties [board location]
+  "Get the liberties of a group at point"
+  (get-group-liberties board (get-group-from-point location board)))
+
+(defn count-point-liberties [board location]
+  "Count the liberties of the group at point"
+  (count-group-liberties board (get-group-from-point location board)))
+
+(defn dead-stone? [board location]
+  "Stone is dead if group has zero liberties"
+  (= 0 (count-point-liberties board location)))
+
+(defn any-dead-stones? [board locations]
+  "True if any location in locations is dead/should be captured"
+  (> (count (filter (partial dead-stone? board) locations)) 0))
 
 (defn get-all-liberties
   "Update the liberties of every group in the board"
   [board])
 
+;;; Take a group off the board
+(defn capture-group
+  [board group]
+  "Capture all stones in the collection group"
+  (reduce #(set-intersection %2 empty-color %1) board group))
 
+;;; Given a move by color at location, capture all appropriate stones
 (defn capture-stones
-  [location color board]
-  board)
+  [board location color]
+  (let [temp-board (set-intersection location color board)
+        enemy-groups (get-enemy-neighbor-groups temp-board location color)
+        dead-groups (filter (partial dead-group? temp-board) enemy-groups)]
+    (reduce (partial capture-group) temp-board dead-groups)))
 
 
-(defn is-valid-move
-  [location color board])
+;;; Did this move capture an ememy group?
+(defn captured-enemy?
+  [board location color]
+  (let [neighbors (get-connected-locations location board)
+        enemy-neighbors (filter #(is-enemy-intersection? board % color) neighbors)]
+    (any-dead-stones? board enemy-neighbors))
+  )
+
+(defn is-valid-move?
+  [board location color]
+  ;; First test if empty intersection
+  (let [temp-board (set-intersection location color board)
+        point-liberties (count-point-liberties temp-board location)]
+    
+    (and (is-empty-intersection? board location) ; was it empty on board?
+         ;; After placing a stone, is the group still alive?
+         ;; Does it still have a liberty, or would it gain a liberty if not?
+         (or (> point-liberties 0)
+             (captured-enemy? temp-board location color))))
+  )
 
 
 (defn place-stone
   "Place the stone"
-  [location color board]
+  [board location color]
   (set-intersection location color
-                    (capture-stones location color board)))
+                    (capture-stones board location color)))
+
+(defn make-move
+  [board location color]
+  "Take in a move and make it if appropriate. Return the board, or nil if no move was made."
+  (if (is-valid-move? board location color) (place-stone board location color) nil))
+
+
 
 (comment
   (defn try-place-stone
