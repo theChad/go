@@ -105,7 +105,7 @@
   (q/no-fill))
 
 ;;; Draw a single stone of a given color
-(defn draw-stone [stone]
+(defn draw-stone [stone this-stone-size]
   "Draw a stone (map with color and loc)"
   (if stone 
     (let [color (:color stone)
@@ -113,7 +113,7 @@
           y (:y stone)]
       (cond (= color "b") (q/fill 0 0 0)
             (= color "w") (q/fill 255 255 255))
-      (q/ellipse x y stone-size stone-size)))
+      (q/ellipse x y this-stone-size this-stone-size)))
   (q/no-fill) ; reset to the default of no fill
   )
 
@@ -123,9 +123,10 @@
   "Draw board, stones and hover stone."
   (q/background 255)
   (draw-board)
-  (if (:stones state) (doseq [stone (:stones state)] (draw-stone stone)))
+  (draw-stone (:hover-stone state) (/ stone-size 2))
+  (if (:stones state) (doseq [stone (:stones state)] (draw-stone stone stone-size)))
   ;;(if (:stones state) (draw-stone ((:stones state) 0)))
-  (draw-stone (:hover-stone state)))
+  )
 
 ;;; Draw a stone and change color when mouse is clicked
 (defn mouse-clicked [state event]
@@ -149,7 +150,7 @@
 ;;; Draw an empty stone to follow along with the mouse
 (defn mouse-moved [state event]
   (let [[grid-x grid-y] (nearest-grid-point [(:x event) (:y event)])]
-    (assoc state :hover-stone {:x grid-x :y grid-y})))
+    (assoc state :hover-stone {:x grid-x :y grid-y :color (:color state)})))
 
 ;;; Update the stone color
 
@@ -157,6 +158,7 @@
 ;;; Create the sketch
 (q/defsketch drawn-board
   :size [board-size board-size]
+  :title "Go"
   :setup setup
   :draw draw-stones
   :mouse-moved mouse-moved
