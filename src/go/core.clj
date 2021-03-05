@@ -3,6 +3,6 @@
   (:require [go.draw.core :as draw]))
 
 (defn -main
-  "I don't do a whole lot ... yet."
+  "Just fires up the GUI game board for a new game."
   [& args]
-  (println "Hello, World!"))
+  (draw/start-gui))

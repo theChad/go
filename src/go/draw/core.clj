@@ -38,6 +38,8 @@
 (defn import-board
   [board state]
   "Import a game engine board into the drawing state."
+  ;; go.game-engine/make-move returns nil if no move was made,
+  ;; so in that case keep the board and set the :error flag.
   (if board (assoc state :stones (get-stones-from-board board))
       (assoc state :error true)))
 
@@ -75,7 +77,10 @@
 (defn next-color [color]
   (if (= color "b") "w" "b"))
 
-(defn switch-color [state]
+(defn switch-color
+  "Switch the current color if a valid move was made"
+  [state]
+  ;; If the move was invalid, :error will be true. Reset it and keep the same color.
   (if (:error state) (assoc state :error false)
       (update state :color next-color)))
 
@@ -123,7 +128,7 @@
   "Draw board, stones and hover stone."
   (q/background 255)
   (draw-board)
-  (draw-stone (:hover-stone state) (/ stone-size 2))
+  (draw-stone (:hover-stone state) (/ stone-size 1.5))
   (if (:stones state) (doseq [stone (:stones state)] (draw-stone stone stone-size)))
   ;;(if (:stones state) (draw-stone ((:stones state) 0)))
   )
@@ -135,16 +140,11 @@
         new-stone-loc (coords-to-location new-stone)
         new-stone-color (:color state)]
     (-> state
-        export-board
+        export-board ; export to game-engine format
+        ;; Tell the game engine to make a move, get back updated board
         (game/make-move new-stone-loc (game/stone-name-to-num new-stone-color))
-        (import-board state)
-        (switch-color))
-    ;; Update the state to reflect the new game state
-    ;; (-> state
-    ;;     ;;(game/make-move new-stone) ; Return the new board, with or without move
-    ;;     ;;(partial import-board state)
-    ;;     (update :stones (fnil conj []) new-stone)
-    ;;     (update :color switch-color))
+        (import-board state) ; import game-engine board back to draw state format
+        (switch-color) )
     ))
 
 ;;; Draw an empty stone to follow along with the mouse
@@ -152,15 +152,16 @@
   (let [[grid-x grid-y] (nearest-grid-point [(:x event) (:y event)])]
     (assoc state :hover-stone {:x grid-x :y grid-y :color (:color state)})))
 
-;;; Update the stone color
-
-
 ;;; Create the sketch
-(q/defsketch drawn-board
-  :size [board-size board-size]
-  :title "Go"
-  :setup setup
-  :draw draw-stones
-  :mouse-moved mouse-moved
-  :mouse-clicked mouse-clicked
-  :middleware [m/fun-mode])
+
+(defn start-gui []
+  "Draw the board and start the gui."
+  (q/defsketch drawn-board
+    :size [board-size board-size]
+    :title "Go"
+    :setup setup
+    :draw draw-stones
+    :mouse-moved mouse-moved
+    :mouse-clicked mouse-clicked
+    :middleware [m/fun-mode]))
+

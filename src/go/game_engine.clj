@@ -1,5 +1,6 @@
 ;;;; Main engine containing all necessary functions for now, could split it up
-(ns go.game-engine)
+(ns go.game-engine
+  (:require [clojure.set]))
 
 
 ;;; Creating boards and interpreting their values
