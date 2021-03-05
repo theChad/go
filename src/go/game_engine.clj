@@ -1,6 +1,8 @@
 ;;;; Main engine containing all necessary functions for now, could split it up
 (ns go.game-engine
-  (:require [clojure.set]))
+  (:require [clojure.set]
+            [go.game-state :as game-state]
+            [go.draw.core :as draw]))
 
 
 ;;; Creating boards and interpreting their values
@@ -263,6 +265,27 @@
   "Take in a move and make it if appropriate. Return the board, or nil if no move was made."
   (if (is-valid-move? board location color) (place-stone board location color) nil))
 
+(defn create-single-move
+  "Create a move map from the location and color"
+  [location color]
+  {:location location :color color})
+
+;;;; Interact with the total game-state
+
+(defn handle-move
+  "Handle a move from the GUI, including updating the game-state."
+  [game-state location color]
+  (if-let [new-board (make-move (game-state/get-current-board game-state) location color)]
+    (game-state/add-move game-state (create-single-move location color) new-board)
+    game-state))
+
+;;;; Create a game
+
+(defn create-game
+  "Create the game-state and run the gui."
+  ([size]
+   (draw/start-gui))
+  ([] (create-game 19)))
 
 
 (comment
@@ -272,3 +295,5 @@
     (if (is-valid-move location color game-board)
       (update-board game-board (place-stone location color (current-board game-board)))
       nil)))
+
+

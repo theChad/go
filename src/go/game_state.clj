@@ -1,4 +1,5 @@
-(ns go.game-state)
+(ns go.game-state
+  (:require [go.game-engine :as game]))
 
 ;;;; Module for handling views and manipulations of the game state
 ;;;; game-state will be a map. {:history [] :position []}.
@@ -26,6 +27,13 @@
   [game-state]
   (:last-move (get-current-state game-state)))
 
+(defn create-game-state
+  "Create an empty game-state."
+  ([size]
+   {:history [{:board (game/get-empty-board [size size]) :last-move nil}]
+    :position [0]})
+  ([]
+   (create-game-state 19)))
 
 ;;;; Updating the state
 
@@ -72,15 +80,17 @@
 (defn make-branch
   "Create a branch point at the current location in the game state history.
    Only create the branch if the element pointed to by (:position game-state) is not
-   the last element of its branch. Create an empty branch and point position to it."
+   the last element of its branch. Create an empty branch and point position to it.
+   Note: the position returned from make-branch will always be right after
+   the last element, so settable but not gettable."
   [game-state]
   (let [{:keys [history position]} game-state
         enclosing-vector-position (pop position)
         enclosing-vector (get-in history enclosing-vector-position)]
     (cond
-      ;; At end of branch, no need to make a new branch point.
+      ;; At end of branch, no need to make a new branch point. Update position only.
       (last-index-in-vector? (last position) enclosing-vector)
-      game-state
+      (assoc game-state :position (end-of-branch game-state))
       ;; At a branch point, need to create new branch.
       (last-common-branch-element? (last position) enclosing-vector)
       (assoc game-state
@@ -103,9 +113,7 @@
   ;; just add a move at the end. Otherwise, vectorize the remaining
   ;; (future) states and create a new vector at the end for the new state.
   (let [new-state {:board board :last-move move}
-        branched-game-state (make-branch game-state) ; Create branch if needed
-        ;;new-position (end-of-branch branched-game-state)
-        ]
+        branched-game-state (make-branch game-state)]
     
     ;; Put the new state at the end of the current branch
     (assoc branched-game-state
