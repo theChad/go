@@ -1,8 +1,7 @@
 ;;;; Main engine containing all necessary functions for now, could split it up
 (ns go.game-engine
   (:require [clojure.set]
-            [go.game-state :as game-state]
-            [go.draw.core :as draw]))
+            [go.game-state :as game-state]))
 
 
 ;;; Creating boards and interpreting their values
@@ -278,14 +277,6 @@
   (if-let [new-board (make-move (game-state/get-current-board game-state) location color)]
     (game-state/add-move game-state (create-single-move location color) new-board)
     game-state))
-
-;;;; Create a game
-
-(defn create-game
-  "Create the game-state and run the gui."
-  ([size]
-   (draw/start-gui))
-  ([] (create-game 19)))
 
 
 (comment

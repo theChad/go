@@ -1,5 +1,5 @@
 (ns go.game-state
-  (:require [go.game-engine :as game]))
+  )
 
 ;;;; Module for handling views and manipulations of the game state
 ;;;; game-state will be a map. {:history [] :position []}.
@@ -8,6 +8,15 @@
 ;;;;   e.g. [&common-elements [path-1] [path-2 [path2-a] [path2-b]] [path-3]]
 ;;;;   Each element in the history vector will be a map of the state
 ;;;;   at that point, containing :board and :last-move. 
+
+
+;;;; Dealing with the game board
+
+(defn get-empty-board
+  "Return a new empty game board"
+  [size]
+  (vec (take (first size) (repeat
+                           (vec (take (second size) (repeat 0)))))))
 
 ;;;; Functions for accessing state
 
@@ -30,7 +39,7 @@
 (defn create-game-state
   "Create an empty game-state."
   ([size]
-   {:history [{:board (game/get-empty-board [size size]) :last-move nil}]
+   {:history [{:board (get-empty-board [size size]) :last-move nil}]
     :position [0]})
   ([]
    (create-game-state 19)))

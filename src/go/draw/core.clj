@@ -1,5 +1,6 @@
 (ns go.draw.core
   (:require [go.game-engine :as game]
+            [go.game-state :as game-state]
             [quil.core :as q]
             [quil.middleware :as m]))
 
@@ -36,12 +37,13 @@
            ))))
 
 (defn import-board
-  [board state]
+  [state]
   "Import a game engine board into the drawing state."
   ;; go.game-engine/make-move returns nil if no move was made,
   ;; so in that case keep the board and set the :error flag.
-  (if board (assoc state :stones (get-stones-from-board board))
-      (assoc state :error true)))
+  (let [board (game-state/get-current-board (:game-state state))]
+    (if board (assoc state :stones (get-stones-from-board board))
+        (assoc state :error true))))
 
 (defn coords-to-location
   [coords]
@@ -86,10 +88,11 @@
 
 
 ;;; Background - maybe include board?
-(defn setup []
+(defn setup [size]
   (q/background 255) ; white background
   (q/frame-rate 30)
-  {:color "b"}
+  {:game-state (game-state/create-game-state size)
+   :color "b"}
   )
 
 
@@ -140,10 +143,11 @@
         new-stone-loc (coords-to-location new-stone)
         new-stone-color (:color state)]
     (-> state
-        export-board ; export to game-engine format
+        :game-state ; extract the game-state format
         ;; Tell the game engine to make a move, get back updated board
-        (game/make-move new-stone-loc (game/stone-name-to-num new-stone-color))
-        (import-board state) ; import game-engine board back to draw state format
+        (game/handle-move new-stone-loc (game/stone-name-to-num new-stone-color))
+        ((partial assoc state :game-state))
+        import-board ; import game-engine board back to draw state format
         (switch-color) )
     ))
 
@@ -154,12 +158,12 @@
 
 ;;; Create the sketch
 
-(defn start-gui []
+(defn start-gui [size]
   "Draw the board and start the gui."
   (q/defsketch drawn-board
     :size [board-size board-size]
     :title "Go"
-    :setup setup
+    :setup (partial setup size)
     :draw draw-stones
     :mouse-moved mouse-moved
     :mouse-clicked mouse-clicked
