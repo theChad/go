@@ -161,6 +161,7 @@
   "Navigate through the game tree when arrows pressed."
   [state event]
   ;; Only moves backwards on any key press right now.
+
   (import-board
    (assoc state :game-state
           (game-state/move-to-previous-state (:game-state state)))))

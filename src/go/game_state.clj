@@ -58,7 +58,8 @@
   (let [{:keys [history position]} game-state]
     (cond
       (= 1 (count position)) [(max 0 (dec (last position)))]
-      (= 0 (last position)) (conj (pop (pop position)) (get-last-common-index (get-state-at-position (pop position))))
+      (= 0 (last position)) (conj (pop (pop position))
+                                  (get-last-common-index (get-state-at-position game-state (pop (pop position)))))
       :else (update position (dec (count position)) dec)
       )))
 
@@ -120,6 +121,9 @@
   (let [branch-start (inc position)]
     (conj (subvec enclosing-vector 0 branch-start) (subvec enclosing-vector branch-start))))
 
+;;; Current issue - enclosing vector position breaks at the top layer. Can't just pop.
+
+
 (defn make-branch
   "Create a branch point at the current location in the game state history.
    Only create the branch if the element pointed to by (:position game-state) is not
@@ -136,10 +140,11 @@
       (assoc game-state :position (end-of-branch game-state))
       ;; At a branch point, need to create new branch.
       (last-common-branch-element? (last position) enclosing-vector)
-      (assoc game-state
-             :history
-             (update-in history enclosing-vector-position #(conj % []))
-             :position (conj (end-of-branch game-state) 0))
+      (do (print (str "enclosing-vector-position" enclosing-vector-position))
+        (assoc game-state
+               :history
+               (update-in history enclosing-vector-position #(conj % []))
+               :position (conj (end-of-branch game-state) 0)))
       ;; Not at a branch point, need to create it and a new branch.
       :else
       (assoc game-state
@@ -155,6 +160,8 @@
   ;; If the current position is the last element of the vector it's in,
   ;; just add a move at the end. Otherwise, vectorize the remaining
   ;; (future) states and create a new vector at the end for the new state.
+  (println "add-move")
+  (println move)
   (let [new-state {:board board :last-move move}
         branched-game-state (make-branch game-state)]
     
