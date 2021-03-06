@@ -36,6 +36,9 @@
             :color (game/num-to-stone-name (game/get-intersection-value [y-loc x-loc] board))}
            ))))
 
+(defn next-color [color]
+  (if (= color "b") "w" "b"))
+
 (defn import-board
   [state]
   "Import a game engine board into the drawing state."
@@ -80,8 +83,7 @@
 
 
 ;;; Next player's turn, if no error. If error don't advance, unflag error.
-(defn next-color [color]
-  (if (= color "b") "w" "b"))
+
 
 (defn switch-color
   "Switch the current color if a valid move was made"
@@ -166,7 +168,9 @@
   "Return the function to be called on the game-state given a key press."
   [k]
   (if-let [f ({:left game-state/move-to-previous-state
-               :right game-state/move-to-next-state}
+               :right game-state/move-to-next-state
+               :down game-state/move-down-parallel-branch
+               :up game-state/move-up-parallel-branch}
               k)]
     f
     identity))

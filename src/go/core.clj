@@ -5,5 +5,11 @@
 
 (defn -main
   "Just fires up the GUI game board for a new game."
-  [& args]
-  (draw/start-gui 19))
+  ([& args]
+   (draw/start-gui (first args)))
+  ([]
+   (print "test")
+   (-main 19)
+   ))
+
+(-main)

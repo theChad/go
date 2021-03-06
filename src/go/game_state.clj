@@ -40,12 +40,22 @@
   [game-state]
   (:last-move (get-current-state game-state)))
 
+(defn get-move-at-position
+  "Return the last move at a specific position in history."
+  [game-state position]
+  (:last-move (get-state-at-position game-state position)))
+
+(defn matches-move?
+  "Compares the move from a board state to the given move."
+  [move board-state]
+  (= move (:last-move board-state)))
+
 (defn get-last-common-index
   "Return the index of the last common element in the branch."
   [branch]
   ;; Since all scalars (common elements) in a branch occur before
   ;; all vectors (other branches), work backwards until finding a scalar. 
-  (if (coll? (last branch))
+  (if (vector? (last branch))
     (recur (pop branch))
     (dec (count branch))))
 
@@ -65,6 +75,8 @@
   [game-state]
   ;; Decrement the last index by one, or go up one level.
   (let [{:keys [history position]} game-state]
+    ;;(print "move-to-previous-state ")
+    ;;(clojure.pprint/pprint (assoc game-state :position (previous-position game-state)))
     (assoc game-state :position (previous-position game-state)))
   )
 
@@ -130,8 +142,8 @@
 (defn move-to-next-state
   "Move the position to the next state in the branch, or hold here if final."
   [game-state]
-  (println "move-to-next-state")
-  (clojure.pprint/pprint game-state)
+  ;;  (println "move-to-next-state")
+  ;;  (clojure.pprint/pprint (assoc game-state :position (next-position game-state)))
   ;; Make sure there is a next state on this branch before moving.
   (assoc game-state :position (next-position game-state)))
 
@@ -176,13 +188,90 @@
       :else
       (-> (assoc game-state
                  :history
+                 ;; If enclosing-vector is entire vector, position is [] and won't update-in
                  (if (= 0 (count enclosing-vector-position))
                    (-> (branched-vector enclosing-vector (last position))
                        (conj []))
                    (-> history
                        (assoc-in enclosing-vector-position (branched-vector enclosing-vector (last position)))
                        (update-in enclosing-vector-position (#(conj % []))))))
-          (#(assoc % :position (end-of-branch %)))))))
+          (#(assoc % :position (conj (end-of-branch %) 0)))))))
+
+(defn in-same-branch?
+  "True if two positions are in the same sub-branch.
+   One being in a child branch of the other doesn't count."
+  [pos1 pos2]
+  (= (drop-last pos1) (drop-last pos2)))
+
+(defn tree-contains?
+  "True if the tree contains an element at position.
+   Tree is a vector-based tree, position is a get-in type vector."
+  [tree position]
+  (cond (= 0 (count position)) true
+        (not (coll? tree)) false
+        (contains? tree (first position)) (tree-contains? (tree (first position)) (rest position))
+        :else false))
+
+(defn position-down-parallel-branch
+  "Position of the next sibling branch."
+  [tree position]
+  (if (>= (count position) 2) ; no siblings if position is top-level in tree
+    (let [new-position  
+          (update position (- (count position) 2) inc)]
+      (if (tree-contains? tree new-position) new-position position))
+    position)
+  )
+
+(defn move-down-parallel-branch
+  "Move down to the next sibling branch."
+  [game-state]
+  (assoc game-state :position (position-down-parallel-branch (:history game-state) (:position game-state))))
+
+(defn position-up-parallel-branch
+  "Position of the next sibling branch."
+  [tree position]
+  (if (>= (count position) 2) ; no siblings if position is top-level in tree
+    (let [new-position  
+          (update position (- (count position) 2) dec)]
+      (if (tree-contains? tree new-position) new-position position))
+    position)
+  )
+
+(defn move-up-parallel-branch
+  "Move down to the next sibling branch."
+  [game-state]
+  (assoc game-state :position (position-up-parallel-branch (:history game-state) (:position game-state))))
+
+(defn tree-parallel-search
+  "Search for item in same position in all parallel branches.
+   Return first occurence of item.
+   item-eq-fn [item tree-node] should compare the equality of the item searched for
+   and the elements of the tree."
+  ([tree position item item-eq-fn]
+   (if (item-eq-fn item (get-in tree position)) position
+       (let [next-pos (position-down-parallel-branch tree position)]
+         (if (= position next-pos) nil
+             (recur tree next-pos item item-eq-fn)))))
+  ([tree position item]
+   (tree-parallel-search tree position item =)))
+
+(defn find-move-if-next
+  "Find the position of the given move, if it's the next move in the branch (or its children)."
+  [game-state move]
+  (let [{:keys [history position]} game-state
+        next-pos (next-position game-state)]
+    (cond
+      (not (in-same-branch? position next-pos))
+      (tree-parallel-search history next-pos move matches-move?)
+      (= move (get-move-at-position game-state next-pos)) next-pos
+      :else nil)))
+
+(defn advance-if-next-move
+  "If the given move is the next move in the branch (or its children), advance to it."
+  [game-state move]
+  (if-let [move-position (find-move-if-next game-state move)]
+    (assoc game-state :position move-position)
+    nil))
 
 (defn add-move
   "Add a new move to the game state history."
@@ -194,11 +283,12 @@
   (println move)
   (let [new-state {:board board :last-move move}
         branched-game-state (make-branch game-state)]
-    
-    ;; Put the new state at the end of the current branch
-    (assoc branched-game-state
-           :history
-           (assoc-in (:history branched-game-state) (:position branched-game-state) new-state))))
+    (if-let [new-game-state (advance-if-next-move game-state move)]
+      new-game-state
+      ;; Put the new state at the end of the current branch
+      (assoc branched-game-state
+             :history
+             (assoc-in (:history branched-game-state) (:position branched-game-state) new-state)))))
 
 
 (branched-vector [1 2 3 4 5] 4)
