@@ -6,10 +6,10 @@
 (defn -main
   "Just fires up the GUI game board for a new game."
   ([& args]
-   (draw/start-gui (first args)))
+   (draw/start-gui (Integer/parseInt (first args))))
   ([]
-   (print "test")
-   (-main 19)
+   (print "defaults")
+   (-main 5)
    ))
 
-(-main)
+

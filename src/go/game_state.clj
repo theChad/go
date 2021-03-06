@@ -156,7 +156,25 @@
   (let [branch-start (inc position)]
     (conj (subvec enclosing-vector 0 branch-start) (subvec enclosing-vector branch-start))))
 
-;;; Current issue - enclosing vector position breaks at the top layer. Can't just pop.
+
+(defn conj-empty
+  "for debugging"
+  ([s]
+   (conj s [])
+   []
+   (conj-empty [])))
+
+(defn create-new-branch-point
+  "Create a new branch point"
+  [history position enclosing-vector-position enclosing-vector]
+  (print "new branch point" enclosing-vector-position " "
+         (-> history
+             (assoc-in enclosing-vector-position (branched-vector enclosing-vector (last position)))
+             (get-in enclosing-vector-position))
+         )
+  (-> history
+      (assoc-in enclosing-vector-position (branched-vector enclosing-vector (last position)))
+      (update-in enclosing-vector-position #(conj % []))))
 
 
 (defn make-branch
@@ -194,7 +212,8 @@
                        (conj []))
                    (-> history
                        (assoc-in enclosing-vector-position (branched-vector enclosing-vector (last position)))
-                       (update-in enclosing-vector-position (#(conj % []))))))
+                       (update-in enclosing-vector-position #(conj % [])))
+                   ))
           (#(assoc % :position (conj (end-of-branch %) 0)))))))
 
 (defn in-same-branch?
