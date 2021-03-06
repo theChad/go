@@ -41,9 +41,13 @@
   "Import a game engine board into the drawing state."
   ;; go.game-engine/make-move returns nil if no move was made,
   ;; so in that case keep the board and set the :error flag.
-  (let [board (game-state/get-current-board (:game-state state))]
-    (if board (assoc state :stones (get-stones-from-board board))
-        (assoc state :error true))))
+  (let [board (game-state/get-current-board (:game-state state))
+        last-color
+        (game/num-to-stone-name (:color (game-state/get-last-move (:game-state state))))]
+    (if board
+      (assoc state :stones (get-stones-from-board board)
+             :color (next-color last-color))
+      (assoc state :error true))))
 
 (defn coords-to-location
   [coords]
@@ -148,7 +152,8 @@
         (game/handle-move new-stone-loc (game/stone-name-to-num new-stone-color))
         ((partial assoc state :game-state))
         import-board ; import game-engine board back to draw state format
-        (switch-color) )
+        ;;(switch-color)
+        )
     ))
 
 ;;; Draw an empty stone to follow along with the mouse
@@ -156,15 +161,25 @@
   (let [[grid-x grid-y] (nearest-grid-point [(:x event) (:y event)])]
     (assoc state :hover-stone {:x grid-x :y grid-y :color (:color state)})))
 
+
+(defn key-to-fn
+  "Return the function to be called on the game-state given a key press."
+  [k]
+  (if-let [f ({:left game-state/move-to-previous-state
+               :right game-state/move-to-next-state}
+              k)]
+    f
+    identity))
+
 ;;; Navigate through the game-state tree with left/right arrows
 (defn key-pressed
   "Navigate through the game tree when arrows pressed."
   [state event]
   ;; Only moves backwards on any key press right now.
-
+  (print (q/key-as-keyword))
   (import-board
    (assoc state :game-state
-          (game-state/move-to-previous-state (:game-state state)))))
+          ((key-to-fn (q/key-as-keyword)) (:game-state state)))))
 
 ;;; Create the sketch
 

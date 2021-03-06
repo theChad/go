@@ -1,5 +1,4 @@
-(ns go.game-state
-  )
+(ns go.game-state)
 
 ;;;; Module for handling views and manipulations of the game state
 ;;;; game-state will be a map. {:history [] :position []}.
@@ -50,8 +49,6 @@
     (recur (pop branch))
     (dec (count branch))))
 
-(get-last-common-index [[3 4] [5 6]])
-
 (defn previous-position
   "Get the previous position from a game-state."
   [game-state]
@@ -81,11 +78,6 @@
 
 ;;;; Updating the state
 
-(defn next-position
-  "Get what would be the next position index."
-  [position]
-  (update-in position [(dec (count position))] inc))
-
 (defn current-branch
   "Return only the current branch from history"
   [game-state]
@@ -99,7 +91,7 @@
    E.g. If the current branch has length 5, [34 23 3] -> [34 23 5]."
   [game-state]
   (let [position (:position game-state)]
-    (conj (pop position) (count (current-branch game-state)))))
+    (conj (pop position) (dec (count (current-branch game-state))))))
 
 (defn last-index-in-vector?
   "True if the index represents the last position in the vector"
@@ -111,7 +103,38 @@
    E.g. with index 3, [0 1 2 3 [4 5] [6 7]] is true."
   [index v]
   (or (last-index-in-vector? index v)
-      (coll? (v (inc index)))))
+      (vector? (v (inc index)))))
+
+(defn branch-point?
+  "True if the given position is a branch point"
+  [game-state position]
+  (vector? (get-state-at-position game-state position)))
+
+
+;; Error showing up here. Nil position?
+
+(defn next-position
+  "Get what would be the next position index."
+  [game-state]
+  (let [{:keys [history position]} game-state
+        next-pos (update-in position [(dec (count position))] inc)]
+    
+    (cond (= (end-of-branch game-state) position)
+          position ; end of branch
+          (branch-point? game-state next-pos)
+          (conj next-pos 0) ; Into first continuing branch
+          :else
+          next-pos ; next spot is a valid state
+      )))
+
+(defn move-to-next-state
+  "Move the position to the next state in the branch, or hold here if final."
+  [game-state]
+  (println "move-to-next-state")
+  (clojure.pprint/pprint game-state)
+  ;; Make sure there is a next state on this branch before moving.
+  (assoc game-state :position (next-position game-state)))
+
 
 (defn branched-vector
   "The enclosing vector of the new branched vector.
@@ -137,22 +160,29 @@
     (cond
       ;; At end of branch, no need to make a new branch point. Update position only.
       (last-index-in-vector? (last position) enclosing-vector)
-      (assoc game-state :position (end-of-branch game-state))
+      (assoc game-state
+             :position (update (end-of-branch game-state) (dec (count (end-of-branch game-state))) inc))
       ;; At a branch point, need to create new branch.
       (last-common-branch-element? (last position) enclosing-vector)
       (do (print (str "enclosing-vector-position" enclosing-vector-position))
-        (assoc game-state
-               :history
-               (update-in history enclosing-vector-position #(conj % []))
-               :position (conj (end-of-branch game-state) 0)))
+          (-> game-state
+              (assoc 
+                     :history
+                     (if (= 0 (count enclosing-vector-position))
+                       (conj history [])
+                       (update-in history enclosing-vector-position #(conj % []))))
+              (#(assoc % :position (conj (end-of-branch %) 0)))))
       ;; Not at a branch point, need to create it and a new branch.
       :else
-      (assoc game-state
-             :history
-             (-> history
-                 (assoc-in enclosing-vector-position (branched-vector enclosing-vector (last position)))
-                 (update-in enclosing-vector-position (#(conj % []))))
-             :position (end-of-branch game-state)))))
+      (-> (assoc game-state
+                 :history
+                 (if (= 0 (count enclosing-vector-position))
+                   (-> (branched-vector enclosing-vector (last position))
+                       (conj []))
+                   (-> history
+                       (assoc-in enclosing-vector-position (branched-vector enclosing-vector (last position)))
+                       (update-in enclosing-vector-position (#(conj % []))))))
+          (#(assoc % :position (end-of-branch %)))))))
 
 (defn add-move
   "Add a new move to the game state history."
@@ -178,7 +208,7 @@
 
 (get-current-state a)
 
-(next-position [1 2 3])
+
 (make-branch a)
 (add-move a 4 5)
 (assoc-in (:history a) [3 2 3] 78)
