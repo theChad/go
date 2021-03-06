@@ -156,6 +156,15 @@
   (let [[grid-x grid-y] (nearest-grid-point [(:x event) (:y event)])]
     (assoc state :hover-stone {:x grid-x :y grid-y :color (:color state)})))
 
+;;; Navigate through the game-state tree with left/right arrows
+(defn key-pressed
+  "Navigate through the game tree when arrows pressed."
+  [state event]
+  ;; Only moves backwards on any key press right now.
+  (import-board
+   (assoc state :game-state
+          (game-state/move-to-previous-state (:game-state state)))))
+
 ;;; Create the sketch
 
 (defn start-gui [size]
@@ -167,4 +176,5 @@
     :draw draw-stones
     :mouse-moved mouse-moved
     :mouse-clicked mouse-clicked
+    :key-pressed key-pressed
     :middleware [m/fun-mode]))

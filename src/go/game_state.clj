@@ -26,6 +26,11 @@
   (let [{:keys [history position]} game-state]
     (get-in history position)))
 
+(defn get-state-at-position
+  "Return the state or branch at a supplied position."
+  [game-state position]
+  (get-in (:history game-state) position))
+
 (defn get-current-board
   "Return the current gameboard from the game history."
   [game-state]
@@ -35,6 +40,35 @@
   "Return the last move from the current path."
   [game-state]
   (:last-move (get-current-state game-state)))
+
+(defn get-last-common-index
+  "Return the index of the last common element in the branch."
+  [branch]
+  ;; Since all scalars (common elements) in a branch occur before
+  ;; all vectors (other branches), work backwards until finding a scalar. 
+  (if (coll? (last branch))
+    (recur (pop branch))
+    (dec (count branch))))
+
+(get-last-common-index [[3 4] [5 6]])
+
+(defn previous-position
+  "Get the previous position from a game-state."
+  [game-state]
+  (let [{:keys [history position]} game-state]
+    (cond
+      (= 1 (count position)) [(max 0 (dec (last position)))]
+      (= 0 (last position)) (conj (pop (pop position)) (get-last-common-index (get-state-at-position (pop position))))
+      :else (update position (dec (count position)) dec)
+      )))
+
+(defn move-to-previous-state
+  "Get the previous state along this branch."
+  [game-state]
+  ;; Decrement the last index by one, or go up one level.
+  (let [{:keys [history position]} game-state]
+    (assoc game-state :position (previous-position game-state)))
+  )
 
 (defn create-game-state
   "Create an empty game-state."
