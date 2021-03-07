@@ -9,7 +9,7 @@
    (draw/start-gui (Integer/parseInt (first args))))
   ([]
    (print "defaults")
-   (-main 5)
+   (-main "5")
    ))
 
 

@@ -272,11 +272,18 @@
 ;;;; Interact with the total game-state
 
 (defn handle-move
-  "Handle a move from the GUI, including updating the game-state."
+  "Handle a move from the GUI, including updating the game-state.
+   Return the updated game-state."
   [game-state location color]
-  (if-let [new-board (make-move (game-state/get-current-board game-state) location color)]
-    (game-state/add-move game-state (create-single-move location color) new-board)
-    game-state))
+  (let [move (create-single-move location color)]
+    ;; Check to see if this move is already the next move in the branch.
+    ;; If it is, just shift the position.
+    (if-let [advanced-game-state (game-state/advance-if-next-move game-state move)]
+      advanced-game-state
+      ;; Not the next move in the game-state, so make the move.
+      (if-let [new-board (make-move (game-state/get-current-board game-state) location color)]
+        (game-state/add-move game-state move new-board)
+        game-state))))
 
 
 (comment
