@@ -1,5 +1,5 @@
 (defproject go "0.1.0-SNAPSHOT"
-  :description "My second start on go (baduk) implemntation"
+  :description "My second start on go (baduk) implementation"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}

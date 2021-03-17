@@ -137,19 +137,6 @@
   [game-state]
   (assoc game-state :position (tree/position-up-parallel-branch (:history game-state) (:position game-state))))
 
-(defn tree-parallel-search
-  "Search for item in same position in all parallel branches.
-   Return first occurence of item.
-   item-eq-fn [item tree-node] should compare the equality of the item searched for
-   and the elements of the tree."
-  ([tree position item item-eq-fn]
-   (if (item-eq-fn item (get-in tree position)) position
-       (let [next-pos (tree/position-down-parallel-branch tree position)]
-         (if (= position next-pos) nil
-             (recur tree next-pos item item-eq-fn)))))
-  ([tree position item]
-   (tree-parallel-search tree position item =)))
-
 (defn find-move-if-next
   "Find the position of the given move, if it's the next move in the branch (or its children)."
   [game-state move]
