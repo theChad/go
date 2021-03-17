@@ -8,8 +8,6 @@ Created using lein, and can be run using `lein run`.
 
 ## Usage
 
-FIXME: explanation
-
     $ lein run
     
 ## Options
