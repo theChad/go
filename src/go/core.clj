@@ -7,7 +7,8 @@
   "Just fires up the GUI game board for a new game."
   ([& args]
    (println "Okay, so at least I'm here.")
-   (draw/start-gui (Integer/parseInt (first args))))
+   ;;(draw/start-gui (Integer/parseInt (first args)))
+   )
   ([]
    (-main "19")
    ))
