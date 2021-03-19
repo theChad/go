@@ -190,6 +190,7 @@
 (defn start-gui [size]
   "Draw the board and start the gui."
   (q/defsketch drawn-board
+    :host "go"
     :size [board-size board-size]
     :title "Go"
     :setup (partial setup size)
