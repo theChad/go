@@ -1,6 +1,6 @@
-# go
+# Local-play Go
 
-Bare-bones implemntation of a local go game. Allows placement of stones and enforces turn order, but will not enforce the ko rule or do any scoring (nor allow passing yet). Likely never will - this was just a hobby project. This is now a clojurescript version, written for the browser.
+This is a basic implementation of a local-play go game. It allows placement of stones and enforces turn order, but will not enforce the ko rule or do any scoring (nor allow passing yet). This project started out as in clojure, on the desktop, but I've since migrated to clojurescript in the browser.
 
 ## [See it in action](resources/public/index.html)
 
