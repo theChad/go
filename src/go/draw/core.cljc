@@ -167,10 +167,10 @@
 (defn key-to-fn
   "Return the function to be called on the game-state given a key press."
   [k]
-  (if-let [f ({:left game-state/move-to-previous-state
-               :right game-state/move-to-next-state
-               :down game-state/move-down-parallel-branch
-               :up game-state/move-up-parallel-branch}
+  (if-let [f ({:ArrowLeft game-state/move-to-previous-state
+               :ArrowRight game-state/move-to-next-state
+               :ArrowDown game-state/move-down-parallel-branch
+               :ArrowUp game-state/move-up-parallel-branch}
               k)]
     f
     identity))

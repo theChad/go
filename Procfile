@@ -1,1 +1,0 @@
-web: java -cp target/go-standalone.jar clojure.main -m go.web
