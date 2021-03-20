@@ -1,21 +1,19 @@
 # go
 
-Bare-bones implemntation of a local go game. Allows placement of stones and enforces turn order, but will not enforce the ko rule or do any scoring (nor allow passing yet). Likely never will - this was just a hobby project. 
+Bare-bones implemntation of a local go game. Allows placement of stones and enforces turn order, but will not enforce the ko rule or do any scoring (nor allow passing yet). Likely never will - this was just a hobby project. This is now a clojurescript version, written for the browser.
 
 ## Installation
 
-Created using lein, and can be run using `lein run`.
+Clone the repo, or just the `resources/public` folder, which contains the html and javascript.
 
 ## Usage
 
-    $ lein run
+    $ lein figwheel
+
+Runs an interactive environmet, with the game in the browser at `localhost:3449'. Alternatively, open `resources/public/index.html` in a browser.
     
-## Options
 
-Board size..but unfinished, as with the rest of the project. `lein run 9` will restrict plays to the upper left 9x9, and capture stones as if playing on a smaller board, but still draws the big board.
-
-
-Copyright © 2017 theChad
+Copyright © 2021 theChad
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
