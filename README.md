@@ -4,7 +4,7 @@ Bare-bones implemntation of a local go game. Allows placement of stones and enfo
 
 ## See it in action
 
-[Here](resources/public/index.html). Click on an intersection to make a move. Left and right arrow keys show the history of the game, while up and down arrows will take you to different branches.
+[Here](https://thechad.github.io/go/resources/public/index.html). Click on an intersection to make a move. Left and right arrow keys show the history of the game, while up and down arrows will take you to different branches.
 
 ## Installation
 
