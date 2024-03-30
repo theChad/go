@@ -14,7 +14,7 @@ Clone the repo, or just the `resources/public` folder, which contains the html a
 
     $ lein figwheel
 
-Runs an interactive environmet, with the game in the browser at `localhost:3449'. Alternatively, open `resources/public/index.html` in a browser.
+Runs an interactive environmet, with the game in the browser at `localhost:3449`. Alternatively, open `resources/public/index.html` in a browser.
    
 
 Copyright © 2021 theChad
